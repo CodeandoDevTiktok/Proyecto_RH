@@ -1,0 +1,110 @@
+{% extends "base.html" %}
+
+{% macro selector(nombre, etiqueta) -%}
+  {% set lista = opciones[nombre] %}
+  {% set actual = v.get(nombre) %}
+  <label class="campo">
+    <span>{{ etiqueta }}</span>
+    <select name="{{ nombre }}">
+      {% if actual and actual not in lista|map('first')|list %}<option value="{{ actual }}" selected>{{ actual }}</option>{% endif %}
+      {% for valor, texto in lista %}<option value="{{ valor }}" {{ 'selected' if actual == valor }}>{{ texto }}</option>{% endfor %}
+    </select>
+  </label>
+{%- endmacro %}
+
+{% block contenido %}
+<section class="cabecera">
+  <div>
+    <h1>Lista de verificación de alta</h1>
+    <p class="sub">Registra los datos del episodio al preparar el alta y obtén el riesgo de reingreso con el seguimiento sugerido.</p>
+  </div>
+</section>
+
+<div class="dos-col">
+<form method="post" class="tarjeta formulario">
+  <fieldset>
+    <legend>Paciente y episodio</legend>
+    <div class="rejilla">
+      <label class="campo"><span>Identificador del paciente</span>
+        <input name="id_paciente" value="{{ v.get('id_paciente', '') }}" placeholder="opcional"></label>
+      {{ selector('gender', 'Sexo') }}
+      {{ selector('payer_code', 'Aseguradora') }}
+      {{ selector('especialidad_grupo', 'Especialidad tratante') }}
+      {{ selector('admission_type_grupo', 'Tipo de admisión') }}
+      {{ selector('admission_source_grupo', 'Origen de la admisión') }}
+    </div>
+  </fieldset>
+
+  <fieldset>
+    <legend>Actividad clínica</legend>
+    <div class="rejilla">
+      {% for c, et, mn, mx in numericos %}
+      <label class="campo"><span>{{ et }}</span>
+        <input type="number" name="{{ c }}" min="{{ mn }}" max="{{ mx }}" value="{{ v.get(c, 0)|int }}" required></label>
+      {% endfor %}
+    </div>
+  </fieldset>
+
+  <fieldset>
+    <legend>Diagnósticos y laboratorio</legend>
+    <div class="rejilla">
+      {{ selector('diag_1_grupo', 'Diagnóstico principal') }}
+      {{ selector('diag_2_grupo', 'Diagnóstico secundario') }}
+      {{ selector('diag_3_grupo', 'Diagnóstico adicional') }}
+      {{ selector('max_glu_serum', 'Glucosa sérica máxima') }}
+      {{ selector('A1Cresult', 'Hemoglobina glicosilada (HbA1c)') }}
+    </div>
+  </fieldset>
+
+  <fieldset>
+    <legend>Antidiabéticos durante la estancia</legend>
+    <div class="rejilla meds">
+      {% for m, nombre in medicamentos %}
+      <label class="campo"><span>{{ nombre }}</span>
+        <select name="{{ m }}">
+          {% for valor, texto in opc_med %}<option value="{{ valor }}" {{ 'selected' if v.get(m, 'No') == valor }}>{{ texto }}</option>{% endfor %}
+        </select></label>
+      {% endfor %}
+      {{ selector('change', '¿Hubo cambio de medicación?') }}
+      {{ selector('diabetesMed', '¿Recibe antidiabéticos?') }}
+    </div>
+  </fieldset>
+
+  <p class="nota">Se calculan automáticamente: visitas previas totales, cuatro o más hospitalizaciones previas, medicamentos activos y con cambio de dosis,
+    si se midieron la HbA1c y la glucosa, y si el diagnóstico principal es diabetes.</p>
+  <div class="acciones"><button class="btn" type="submit">Calcular riesgo</button></div>
+</form>
+
+<aside class="tarjeta resultado {{ resultado.clase if resultado }}">
+  {% if resultado %}
+    <h2>Resultado · {{ resultado.id }}</h2>
+    <div class="medidor">
+      <svg viewBox="0 0 120 70" aria-hidden="true">
+        <path d="M10 60 A50 50 0 0 1 110 60" class="pista"/>
+        {% set frac = [resultado.p / 0.6, 1]|min %}
+        <path d="M10 60 A50 50 0 0 1 110 60" class="valor {{ resultado.clase }}"
+              pathLength="100" stroke-dasharray="{{ frac * 100 }} 100"/>
+      </svg>
+      <div class="cifra">{{ resultado.p|pct }}</div>
+      <div class="chip {{ resultado.clase }}">Riesgo {{ resultado.nivel|lower }}</div>
+    </div>
+    <p class="comparar">
+      {% if resultado.veces %}<b>{{ resultado.veces|num }} veces</b> el riesgo promedio ({{ resultado.prev|pct }}).{% endif %}
+    </p>
+    <div class="plan">
+      <span>Seguimiento sugerido</span>
+      <strong>{{ resultado.plan }}</strong>
+    </div>
+    {% if resultado.senales %}
+      <h3>Señales del caso</h3>
+      <ul class="factores">{% for f in resultado.senales %}<li>{{ f }}</li>{% endfor %}</ul>
+      <p class="nota">Son rasgos descriptivos del episodio, no la explicación del modelo.</p>
+    {% endif %}
+    <p class="nota">Nivel orientativo: alto si duplica el riesgo promedio, medio si lo iguala o supera. El equipo clínico confirma o ajusta el plan.</p>
+  {% else %}
+    <h2>Resultado</h2>
+    <p class="vacio">Completa el formulario (viene precargado con un caso de ejemplo) y pulsa <b>Calcular riesgo</b>.</p>
+  {% endif %}
+</aside>
+</div>
+{% endblock %}

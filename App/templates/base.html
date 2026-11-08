@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block titulo %}Lista de verificación de alta{% endblock %} · Alta segura</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='estilos.css') }}">
+</head>
+<body>
+  <header class="barra">
+    <div class="marca">
+      <span class="logo">+</span>
+      <div>
+        <strong>Alta segura</strong>
+        <small>Riesgo de reingreso antes de 30 días · pacientes con diabetes</small>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    {% if error_api %}
+      <div class="alerta error">⚠ {{ error_api }} Verifica que la API esté en funcionamiento ({{ API_URL }}).</div>
+    {% endif %}
+    {% with mensajes = get_flashed_messages(with_categories=true) %}
+      {% for cat, m in mensajes %}<div class="alerta {{ cat }}">{{ m }}</div>{% endfor %}
+    {% endwith %}
+    {% block contenido %}{% endblock %}
+  </main>
+
+  <footer>Proyecto 9 · Reingreso hospitalario evitable · UTEC Posgrado</footer>
+</body>
+</html>

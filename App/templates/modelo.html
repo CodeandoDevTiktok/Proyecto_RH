@@ -1,0 +1,95 @@
+{% extends "base.html" %}
+{% block titulo %}Modelo{% endblock %}
+{% block contenido %}
+<section class="cabecera">
+  <div>
+    <h1>Ficha del modelo</h1>
+    <p class="sub">Qué hay detrás del puntaje y qué tan confiable es.</p>
+  </div>
+  {% if salud %}
+    <div class="estado {{ 'ok' if salud.version_correcta else 'aviso-v' }}">
+      API {{ salud.estado }} · sklearn {{ salud.sklearn }}
+      {% if not salud.version_correcta %}(se entrenó con {{ salud.sklearn_entrenamiento }}){% endif %}
+      · activa hace {{ salud.segundos_activo|int }} s
+    </div>
+  {% endif %}
+</section>
+
+{% if ficha %}
+{% set m = ficha.metricas_test %}
+{% set e = ficha.etiquetas_version or {} %}
+<section class="tarjeta veredicto">
+  <div>
+    <span class="chip alto grande">{{ ficha.veredicto }}</span>
+    <p>{{ ficha.uso }}</p>
+    {% if e.criterios_fallidos %}
+      <p><b>Criterios no cumplidos:</b>
+        {% for c in e.criterios_fallidos.split(',') %}<code>{{ c }}</code>{% if not loop.last %}, {% endif %}{% endfor %}</p>
+    {% endif %}
+    {% if e.justificacion %}<p class="nota">{{ e.justificacion }}</p>{% endif %}
+  </div>
+  <dl class="meta">
+    <dt>Modelo</dt><dd>{{ ficha.modelo }} · v{{ ficha.version }} ({{ ficha.alias }})</dd>
+    <dt>Algoritmo</dt><dd>{{ ficha.algoritmo }} + calibración {{ ficha.calibracion }}</dd>
+    <dt>Datos</dt><dd>{{ e.version_datos }} · commit {{ e.git_commit }}</dd>
+    <dt>MLflow</dt><dd><a href="{{ ficha.mlflow }}" target="_blank" rel="noopener">run {{ ficha.run_id[:8] }}</a></dd>
+  </dl>
+</section>
+
+<section class="kpis">
+  <div class="kpi"><span>Recall @ top 10 %</span><b>{{ m.test_recall_at_k|pct }}</b>
+    <small>IC {{ m.test_recall_at_k_ic_inf|pct }} – {{ m.test_recall_at_k_ic_sup|pct }}</small></div>
+  <div class="kpi"><span>Precisión @ top 10 %</span><b>{{ m.test_precision_at_k|pct }}</b>
+    <small>IC {{ m.test_precision_at_k_ic_inf|pct }} – {{ m.test_precision_at_k_ic_sup|pct }}</small></div>
+  <div class="kpi"><span>Lift @ K</span><b>{{ m.test_lift_at_k|num(2) }}×</b><small>frente a elegir al azar</small></div>
+  <div class="kpi"><span>ROC AUC</span><b>{{ m.test_roc_auc|num(3) }}</b>
+    <small>IC {{ m.test_roc_auc_ic_inf|num(3) }} – {{ m.test_roc_auc_ic_sup|num(3) }}</small></div>
+  <div class="kpi"><span>AUC-PR</span><b>{{ m.test_aucpr|num(3) }}</b><small>{{ m.test_aucpr_sobre_prevalencia|num(2) }}× la prevalencia</small></div>
+  <div class="kpi"><span>Brier</span><b>{{ m.test_brier|num(4) }}</b>
+    <small>pendiente cal. {{ m.test_cal_pendiente|num(2) }}</small></div>
+</section>
+
+<div class="dos-col igual">
+<section class="tarjeta">
+  <h2>¿Supera a las alternativas simples?</h2>
+  <p class="sub">Recall al contactar el 10 % de las altas.</p>
+  {% set bases = [
+    ('Modelo campeón', m.test_recall_at_k, 'medio'),
+    ('Regresión logística (B1)', m.test_b1_logistica_recall_at_k, 'gris'),
+    ('Regla clínica (B2)', m.test_b2_regla_recall_at_k, 'gris'),
+    ('Al azar / prevalencia (B0)', m.test_b0_prevalencia_recall_at_k, 'gris')] %}
+  {% for nombre, val, cls in bases %}
+    <div class="fila-barra">
+      <span>{{ nombre }}</span>
+      <div class="barra-p ancha"><i class="{{ cls }}" style="width: {{ val * 100 / 0.4 }}%"></i></div>
+      <b>{{ val|pct }}</b>
+    </div>
+  {% endfor %}
+  <p class="nota">Supera a la logística por menos de 1 punto, dentro del intervalo de confianza: por eso falla el criterio C1.</p>
+</section>
+
+<section class="tarjeta">
+  <h2>Recall según cuántas altas se contactan</h2>
+  {% for nombre, val in [('Top 5 %', m.test_recall_at_k_5), ('Top 10 %', m.test_recall_at_k_10), ('Top 20 %', m.test_recall_at_k_20)] %}
+    <div class="fila-barra">
+      <span>{{ nombre }}</span>
+      <div class="barra-p ancha"><i class="medio" style="width: {{ val * 100 / 0.4 }}%"></i></div>
+      <b>{{ val|pct }}</b>
+    </div>
+  {% endfor %}
+  <p class="nota">Prevalencia en test: {{ m.test_prevalencia|pct }}. Brecha de sensibilidad entre grupos:
+    <b>{{ m.test_brecha_sensibilidad_pp|num(1) }} pp</b> (criterio C4 de equidad no cumplido).</p>
+</section>
+</div>
+
+{% if esquema %}
+<section class="tarjeta">
+  <h2>Entradas del modelo ({{ esquema.columnas|length }})</h2>
+  <p class="sub">{{ esquema.numericas|length }} numéricas · {{ esquema.categoricas|length }} categóricas</p>
+  <div class="etiquetas">
+    {% for c in esquema.columnas %}<code class="{{ 'n' if c.tipo == 'double' else 'c' }}">{{ c.nombre }}</code>{% endfor %}
+  </div>
+</section>
+{% endif %}
+{% endif %}
+{% endblock %}

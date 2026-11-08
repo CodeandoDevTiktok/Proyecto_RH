@@ -1,0 +1,101 @@
+{% extends "base.html" %}
+{% block titulo %}Lista del día{% endblock %}
+{% block contenido %}
+<section class="cabecera">
+  <div>
+    <h1>Lista del día</h1>
+    <p class="sub">Altas ordenadas por riesgo de reingreso y marcadas según tu capacidad de llamadas.</p>
+  </div>
+</section>
+
+<section class="tarjeta">
+  <form method="post" enctype="multipart/form-data" class="carga">
+    <label class="campo">
+      <span>Altas del día (CSV o JSON)</span>
+      <input type="file" name="archivo" accept=".csv,.json" required>
+      <small>Mismas columnas que <code>/esquema</code>. Una columna <code>id</code> o <code>encounter_id</code> se usa como identificador.</small>
+    </label>
+    <label class="campo corto">
+      <span>Llamadas disponibles</span>
+      <input type="number" name="capacidad" min="1" value="{{ capacidad }}">
+    </label>
+    <div class="acciones">
+      <button type="submit" class="btn">Priorizar</button>
+      <a class="btn sec" href="{{ url_for('lista', ejemplo=1, capacidad=1) }}">Probar con el ejemplo</a>
+    </div>
+  </form>
+</section>
+
+{% if resultado %}
+<section class="kpis">
+  <div class="kpi"><span>Altas en el lote</span><b>{{ kpi.n }}</b></div>
+  <div class="kpi"><span>A contactar</span><b>{{ kpi.k }}</b><small>capacidad {{ capacidad }}</small></div>
+  <div class="kpi"><span>Riesgo alto (≥ 2× prevalencia)</span><b>{{ kpi.altos }}</b></div>
+  <div class="kpi"><span>Reingresos esperados en el lote</span><b>{{ kpi.esperados_total|num(1) }}</b></div>
+  <div class="kpi"><span>…de ellos, en el grupo contactado</span><b>{{ kpi.cobertura|pct(0) }}</b><small>{{ kpi.esperados_top|num(1) }} esperados</small></div>
+</section>
+
+<section class="tarjeta">
+  <div class="tabla-cab">
+    <h2>Prioridad · {{ fuente }}</h2>
+    <div>
+      <label class="check"><input type="checkbox" id="solo-contactar"> Solo a contactar</label>
+      <button class="btn sec" id="descargar" type="button">Descargar CSV</button>
+    </div>
+  </div>
+  <div class="tabla-wrap">
+    <table id="tabla">
+      <thead>
+        <tr><th>#</th><th>ID</th><th>Probabilidad</th><th>Nivel</th><th>Seguimiento sugerido</th><th>Contactar</th></tr>
+      </thead>
+      <tbody>
+      {% for r in filas %}
+        <tr class="{{ 'marcada' if r.contactar }}" data-contactar="{{ 1 if r.contactar else 0 }}">
+          <td>{{ r.ranking }}</td>
+          <td><code>{{ r.id }}</code></td>
+          <td>
+            <div class="prob">
+              <div class="barra-p"><i class="{{ r.clase }}" style="width: {{ [r.probabilidad_reingreso_30d * 100 / 0.6, 100]|min }}%"></i></div>
+              <span>{{ r.probabilidad_reingreso_30d|pct }}</span>
+            </div>
+          </td>
+          <td><span class="chip {{ r.clase }}">{{ r.nivel }}</span></td>
+          <td>{{ r.plan }}</td>
+          <td>{{ '✔ Sí' if r.contactar else '—' }}</td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  <p class="nota">
+    Nivel orientativo frente a la prevalencia de test ({{ prev|pct }}): Alto ≥ 2×, Medio ≥ 1×. Las barras saturan en 60 %.
+    {{ resultado.criterio }}.
+  </p>
+</section>
+<script id="datos" type="application/json">{{ filas|tojson }}</script>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script>
+(function () {
+  const chk = document.getElementById('solo-contactar');
+  if (chk) chk.addEventListener('change', () => {
+    document.querySelectorAll('#tabla tbody tr').forEach(tr => {
+      tr.style.display = chk.checked && tr.dataset.contactar !== '1' ? 'none' : '';
+    });
+  });
+  const btn = document.getElementById('descargar');
+  if (btn) btn.addEventListener('click', () => {
+    const filas = JSON.parse(document.getElementById('datos').textContent);
+    const cols = ['ranking', 'id', 'probabilidad_reingreso_30d', 'nivel', 'plan', 'contactar'];
+    const esc = v => '"' + String(v ?? '').replace(/"/g, '""') + '"';
+    const csv = [cols.join(',')].concat(filas.map(f => cols.map(c => esc(f[c])).join(','))).join('\n');
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob(['﻿' + csv], {type: 'text/csv'}));
+    a.download = 'lista_priorizada.csv';
+    a.click();
+  });
+})();
+</script>
+{% endblock %}

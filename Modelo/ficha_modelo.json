@@ -1,0 +1,294 @@
+{
+  "modelo": "p09-reingreso-30d",
+  "alias": "campeon",
+  "version": "1",
+  "run_id": "5945de63c4cb46bf9771b2c38a0da2a1",
+  "mlflow": "https://dagshub.com/eduardova28/p09-reingreso.mlflow",
+  "algoritmo": "hist_gb",
+  "calibracion": "isotonic",
+  "salida": "predict_proba(X)[:, 1] = probabilidad de reingreso <30 días; ordenar de mayor a menor y contactar el top K (10 % de las altas)",
+  "metricas_test": {
+    "test_recall_at_k": 0.2111,
+    "test_precision_at_k": 0.2398,
+    "test_aucpr": 0.2013,
+    "test_roc_auc": 0.6522,
+    "test_prevalencia": 0.1136,
+    "test_lift_at_k": 2.1104,
+    "test_aucpr_sobre_prevalencia": 1.7718,
+    "test_brier": 0.0973,
+    "test_cal_pendiente": 0.9702,
+    "test_cal_intercepto": -0.0701,
+    "test_b0_prevalencia_recall_at_k": 0.1,
+    "test_brecha_sensibilidad_pp": 29.152,
+    "test_b1_logistica_recall_at_k": 0.2044,
+    "test_recall_at_k_5": 0.1276,
+    "test_recall_at_k_10": 0.2111,
+    "test_recall_at_k_20": 0.3542,
+    "test_recall_at_k_ic_inf": 0.1927,
+    "test_recall_at_k_ic_sup": 0.2311,
+    "test_precision_at_k_ic_inf": 0.2173,
+    "test_precision_at_k_ic_sup": 0.2669,
+    "test_aucpr_ic_inf": 0.184,
+    "test_aucpr_ic_sup": 0.2236,
+    "test_roc_auc_ic_inf": 0.6395,
+    "test_roc_auc_ic_sup": 0.6653,
+    "test_b2_regla_recall_at_k": 0.204
+  },
+  "etiquetas_version": {
+    "criterios_fallidos": "C1_recall_at_k_supera_mejor_baseline_10pct,C4_brecha_sensibilidad_pp",
+    "datos_md5_train": "98a56cd89b38edde4dbfa251c0f46319",
+    "git_commit": "031e8f4",
+    "justificacion": "Población accionable sin hospicio (bitácoras 0001, 0014 y 0017); reentrenado en la infraestructura del grupo.",
+    "veredicto": "NO CUMPLE",
+    "version_datos": "v1"
+  },
+  "columnas_entrada": [
+    {
+      "type": "double",
+      "name": "time_in_hospital",
+      "required": true
+    },
+    {
+      "type": "double",
+      "name": "num_lab_procedures",
+      "required": true
+    },
+    {
+      "type": "double",
+      "name": "num_procedures",
+      "required": true
+    },
+    {
+      "type": "double",
+      "name": "num_medications",
+      "required": true
+    },
+    {
+      "type": "double",
+      "name": "number_outpatient",
+      "required": true
+    },
+    {
+      "type": "double",
+      "name": "number_emergency",
+      "required": true
+    },
+    {
+      "type": "double",
+      "name": "number_inpatient",
+      "required": true
+    },
+    {
+      "type": "double",
+      "name": "number_diagnoses",
+      "required": true
+    },
+    {
+      "type": "double",
+      "name": "edad_num",
+      "required": true
+    },
+    {
+      "type": "double",
+      "name": "visitas_previas_total",
+      "required": true
+    },
+    {
+      "type": "double",
+      "name": "hosp_previas_4mas",
+      "required": true
+    },
+    {
+      "type": "double",
+      "name": "n_meds_activos",
+      "required": true
+    },
+    {
+      "type": "double",
+      "name": "n_meds_cambiados",
+      "required": true
+    },
+    {
+      "type": "double",
+      "name": "a1c_medido",
+      "required": true
+    },
+    {
+      "type": "double",
+      "name": "glu_medido",
+      "required": true
+    },
+    {
+      "type": "double",
+      "name": "diag_principal_diabetes",
+      "required": true
+    },
+    {
+      "type": "string",
+      "name": "gender",
+      "required": true
+    },
+    {
+      "type": "string",
+      "name": "payer_code",
+      "required": true
+    },
+    {
+      "type": "string",
+      "name": "max_glu_serum",
+      "required": true
+    },
+    {
+      "type": "string",
+      "name": "A1Cresult",
+      "required": true
+    },
+    {
+      "type": "string",
+      "name": "metformin",
+      "required": true
+    },
+    {
+      "type": "string",
+      "name": "repaglinide",
+      "required": true
+    },
+    {
+      "type": "string",
+      "name": "nateglinide",
+      "required": true
+    },
+    {
+      "type": "string",
+      "name": "chlorpropamide",
+      "required": true
+    },
+    {
+      "type": "string",
+      "name": "glimepiride",
+      "required": true
+    },
+    {
+      "type": "string",
+      "name": "acetohexamide",
+      "required": true
+    },
+    {
+      "type": "string",
+      "name": "glipizide",
+      "required": true
+    },
+    {
+      "type": "string",
+      "name": "glyburide",
+      "required": true
+    },
+    {
+      "type": "string",
+      "name": "tolbutamide",
+      "required": true
+    },
+    {
+      "type": "string",
+      "name": "pioglitazone",
+      "required": true
+    },
+    {
+      "type": "string",
+      "name": "rosiglitazone",
+      "required": true
+    },
+    {
+      "type": "string",
+      "name": "acarbose",
+      "required": true
+    },
+    {
+      "type": "string",
+      "name": "miglitol",
+      "required": true
+    },
+    {
+      "type": "string",
+      "name": "troglitazone",
+      "required": true
+    },
+    {
+      "type": "string",
+      "name": "tolazamide",
+      "required": true
+    },
+    {
+      "type": "string",
+      "name": "insulin",
+      "required": true
+    },
+    {
+      "type": "string",
+      "name": "glyburide-metformin",
+      "required": true
+    },
+    {
+      "type": "string",
+      "name": "glipizide-metformin",
+      "required": true
+    },
+    {
+      "type": "string",
+      "name": "glimepiride-pioglitazone",
+      "required": true
+    },
+    {
+      "type": "string",
+      "name": "metformin-rosiglitazone",
+      "required": true
+    },
+    {
+      "type": "string",
+      "name": "metformin-pioglitazone",
+      "required": true
+    },
+    {
+      "type": "string",
+      "name": "change",
+      "required": true
+    },
+    {
+      "type": "string",
+      "name": "diabetesMed",
+      "required": true
+    },
+    {
+      "type": "string",
+      "name": "diag_1_grupo",
+      "required": true
+    },
+    {
+      "type": "string",
+      "name": "diag_2_grupo",
+      "required": true
+    },
+    {
+      "type": "string",
+      "name": "diag_3_grupo",
+      "required": true
+    },
+    {
+      "type": "string",
+      "name": "especialidad_grupo",
+      "required": true
+    },
+    {
+      "type": "string",
+      "name": "admission_type_grupo",
+      "required": true
+    },
+    {
+      "type": "string",
+      "name": "admission_source_grupo",
+      "required": true
+    }
+  ],
+  "veredicto": "NO CUMPLE",
+  "uso": "Prototipo académico. No usar para decidir sobre pacientes (veredicto NO CUMPLE; ver bitácora 0014)."
+}
